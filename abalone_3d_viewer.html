@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Abalone 3D Explorer</title>
+<script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min"></script>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+    }
+    #controls {
+        margin-bottom: 20px;
+    }
+    select {
+        margin-right: 10px;
+        padding: 5px;
+    }
+</style>
+</head>
+<body>
+
+<h2>Interactive 3D Abalone Data Explorer</h2>
+
+<div id="controls">
+    <label>X-axis:</label>
+    <select id="xSelect"></select>
+
+    <label>Y-axis:</label>
+    <select id="ySelect"></select>
+
+    <label>Z-axis:</label>
+    <select id="zSelect"></select>
+
+    <button id="plotBtn">Plot</button>
+</div>
+
+<div id="plot" style="width: 100%; height: 700px;"></div>
+
+<script>
+// Features available
+const features = [
+    "length", "diameter", "height",
+    "whole_weight", "shucked_weight",
+    "viscera_weight", "shell_weight"
+];
+
+// Colors for categories
+const colorMap = {
+    "Young": "yellow",
+    "Middle": "#ADD8E6",
+    "Old": "black"
+};
+
+// Populate the dropdowns
+function populateSelects() {
+    const selects = ["xSelect", "ySelect", "zSelect"];
+    selects.forEach(id => {
+        const sel = document.getElementById(id);
+        features.forEach(f => {
+            const opt = document.createElement("option");
+            opt.value = opt.textContent = f;
+            sel.appendChild(opt);
+        });
+    });
+
+    // Default selections
+    document.getElementById("xSelect").value = "length";
+    document.getElementById("ySelect").value = "diameter";
+    document.getElementById("zSelect").value = "height";
+}
+
+let dataJSON = [];
+
+// Load the JSON file
+fetch("abalone_males_agecat.json")
+    .then(resp => resp.json())
+    .then(json => {
+        dataJSON = json;
+        populateSelects();
+        drawPlot();
+    });
+
+// Draw the 3D plot
+function drawPlot() {
+    const xFeature = document.getElementById("xSelect").value;
+    const yFeature = document.getElementById("ySelect").value;
+    const zFeature = document.getElementById("zSelect").value;
+
+    const traces = [];
+
+    // Create one trace per age category
+    for (const ageCat of Object.keys(colorMap)) {
+        const subset = dataJSON.filter(d => d.age_category === ageCat);
+
+        traces.push({
+            x: subset.map(d => d[xFeature]),
+            y: subset.map(d => d[yFeature]),
+            z: subset.map(d => d[zFeature]),
+            mode: "markers",
+            type: "scatter3d",
+            name: ageCat,
+            marker: {
+                size: 4,
+                color: colorMap[ageCat]
+            }
+        });
+    }
+
+    const layout = {
+        scene: {
+            xaxis: { title: xFeature },
+            yaxis: { title: yFeature },
+            zaxis: { title: zFeature }
+        },
+        margin: { l: 0, r: 0, t: 0, b: 0 }
+    };
+
+    Plotly.newPlot("plot", traces, layout);
+}
+
+// Bind button
+document.getElementById("plotBtn").addEventListener("click", drawPlot);
+</script>
+</body>
+</html>
