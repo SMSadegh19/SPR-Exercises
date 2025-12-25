@@ -1,1 +1,1 @@
-# Hello SPR
+# Statistical Pattern Recognition
